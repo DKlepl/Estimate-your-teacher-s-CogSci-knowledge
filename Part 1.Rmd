@@ -1,0 +1,301 @@
+---
+title: "Computational Modeling - Week 4 - Assignment 2 - Part 1"
+author: "Riccardo Fusaroli"
+date: "2/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(brms)
+library(ggplot2)
+library(rethinking)
+```
+
+## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
+
+### First part
+
+You want to assess your teachers' knowledge of cognitive science. "These guys are a bunch of drama(turgist) queens, mindless philosophers, chattering communication people and Russian spies. Do they really know CogSci?", you think.
+
+To keep things simple (your teachers should not be faced with too complicated things):
+- You created a pool of equally challenging questions on CogSci
+- Each question can be answered correctly or not (we don't allow partially correct answers, to make our life simpler).
+- Knowledge of CogSci can be measured on a scale from 0 (negative knowledge, all answers wrong) through 0.5 (random chance) to 1 (awesome CogSci superpowers)
+
+This is the data:
+- Riccardo: 3 correct answers out of 6 questions
+- Kristian: 2 correct answers out of 2 questions (then he gets bored)
+- Josh: 160 correct answers out of 198 questions (Josh never gets bored)
+- Mikkel: 66 correct answers out of 132 questions
+
+```{r data}
+d <- data.frame(
+  Correct=c(3,2,160,66),
+  Questions=c(6,2,198,132),
+  Teacher=c("RF","KT","JS","MW"))
+```
+
+
+Questions:
+
+1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+- First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
+
+```{r grid approximation}
+get_posterior_flat = function(dat,teacher,grid_size) {
+  dens=grid_size
+  
+  p_grid = seq(from=0, to=1, length.out = dens)
+  
+  prior=rep(1,dens)
+  
+  likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
+  
+  unst_post = likelihood * prior
+  
+  posterior = unst_post/sum(unst_post)
+  
+  result=data.frame(grid=p_grid,posterior=posterior,prior=prior,likelihood=likelihood, Teacher=teacher)
+  
+  return(result)
+}
+gr_size=1e4
+
+result_Ric = get_posterior_flat(d,"RF",gr_size)
+
+
+ggplot(result_Ric,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#What is the probability he knows more than chance (0.5)
+sum( result_Ric$posterior[ result_Ric$grid > 0.5 ] )
+```
+
+
+- Then implement a quadratic approximation (hint check paragraph 2.4.2!).
+
+```{r}
+library(rethinking)
+Ric_quad = map(
+    alist(
+        w ~ dbinom(d$Questions[d$Teacher=="RF"],p) ,
+        p ~ dunif(0,1)
+    ) ,
+    data=list(w=d$Correct[d$Teacher=="RF"]) )
+
+# display summary of quadratic approximation
+precis( Ric_quad )
+```
+
+- N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
+
+##1. Answer
+Using the grid approximation Riccardo's CogSci knowledge is estimated with the highest posterior probability to be 0.5. Using the quadratic approximation and under the assumption that the distribution is Gaussian the knowledge is estimated to be 0.5 with 89% confidence interval between 0.17 and 0.83. The probability that Riccardo knows more than chance is 0.5.
+
+
+2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+2a. Produce plots of the prior, and posterior for each teacher.
+```{r all teachers}
+gr_size=1e4
+
+#Josh
+result_Josh = get_posterior_flat(d,"JS",gr_size)
+
+ggplot(result_Josh,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#Kristian
+result_Krist = get_posterior_flat(d,"KT",gr_size)
+
+ggplot(result_Krist,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#Mikkel
+result_Mik = get_posterior_flat(d,"MW",gr_size)
+
+ggplot(result_Mik,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#plot all teachers together
+  #get all results together
+result_all = rbind(result_Ric,result_Josh,result_Krist,result_Mik)
+
+flat_plot=ggplot(result_all,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+flat_plot
+```
+
+## Answer
+Who's the best? 
+When the posterior distributions of all teacher's knowledge is plotted we can see that Josh's knowledge is the largest and with his narrow distribution this estimate is also the most reliable one. It's possible that Kristian is the best judging from his distribution but he would need to answer a bit more questions.
+
+Comment on the posteriors of Riccardo and Mikkel.
+To compare the posteriors better let's plot only these two together.
+```{r}
+result_M_R = rbind(result_Ric,result_Mik)
+ggplot(result_M_R,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+```
+The modes of both distributions are at 0.5. However, since Mikkel answered considerably more questions than Riccardo, his distribution is narrower around the mode which makes that estimate more credible.
+
+
+3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
+3a. Produce plots of the prior and posterior for each teacher.
+```{r}
+get_posterior_norm = function(dat,teacher,grid_size) {
+  dens=grid_size
+  
+  p_grid = seq(from=0, to=1, length.out = dens)
+  
+  prior=dnorm(p_grid,mean=0.8, sd=0.2)
+  
+  likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
+  
+  unst_post = likelihood * prior
+  
+  posterior = unst_post/sum(unst_post)
+  
+  result=data.frame(grid=p_grid,posterior=posterior,prior=prior,likelihood=likelihood, Teacher=teacher)
+  
+  return(result)
+}
+```
+
+```{r}
+gr_size=1e4
+
+#Riccardo
+norm_Ric=get_posterior_norm(d,"RF",gr_size)
+
+pl_1=ggplot(norm_Ric,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#Josh
+norm_Josh = get_posterior_norm(d,"JS",gr_size)
+
+ggplot(norm_Josh,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#Kristian
+norm_Krist = get_posterior_norm(d,"KT",gr_size)
+
+ggplot(norm_Krist,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#Mikkel
+norm_Mik = get_posterior_norm(d,"MW",gr_size)
+
+ggplot(norm_Mik,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+
+#plot all together
+norm_all = rbind(norm_Ric,norm_Josh,norm_Krist,norm_Mik)
+
+norm_plot=ggplot(norm_all,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+norm_plot
+flat_plot
+```
+The normal prior does change the posteriors. 
+Riccardo's posterior's mode shifts with the normal prior from 0.5 to 0.7 so more to the mean of the prior. The confidence of the model in this estimate is also higher than with the flat prior. It remains however quite broad distribution.
+Josh's knowledge estimate is based on a lot of data and therefore the estimate was quite confident even with flat prior. With the normal prior the posterior doesn't change because the mean of the prior is at 0.8 which is similar value as the mean of Josh's posterior with flat prior. With the normal prior we basically confirm our prior and we should increase our belief that Josh is very knowledgable.
+Kristian's posterior changed from exponential growth to a more Gaussian distribution. His estimated knowledge is now lower and closer to the mean of prior. He might be still the most knowledgable of the teachers since he got the perfect score.
+Mikkel's posterior shifted also from chance level towards the mean of prior. However since the estimate was supported with quite a lot of data the prior does not influence the inference that much and therefore the posterior remains quite narrow.
+
+
+
+4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+
+```{r}
+gr_size=1e4
+
+d_more = data.frame(d[,1:2]*100,Teacher=d$Teacher)
+
+teachers=c("KT", "JS","MW","RF")
+
+result_more_flat = data.frame()
+result_more_norm = data.frame()
+
+for (teach in teachers) {
+  res_1_flat = get_posterior_flat(d_more,teach,gr_size)
+  res_1_norm = get_posterior_norm(d_more,teach,gr_size)
+  
+  result_more_flat = rbind(res_1_flat,result_more_flat)
+  result_more_norm = rbind(res_1_norm,result_more_norm)
+}
+
+plot_more_flat = ggplot(result_more_flat,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+plot_more_norm = ggplot(result_more_norm,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+plot_more_flat
+plot_more_norm
+```
+
+
+5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+
+Prior could be step function (1s until 0.5 and 0s from that). Or a normal distribution with mean at chance level and very small standard deviation.
+
+6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
+
+7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
+```{r}
+FlatModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("uniform(0,1)", class = "Intercept"),family=binomial)
+plot(FlatModel)
+PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"))
+plot(PositiveModel)
+SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"))
+plot(SkepticalModel)
+```
+
+If you dare, try to tweak the data and model to test two hypotheses:
+- Is Kristian different from Josh?
+- Is Josh different from chance?
+
+
+
