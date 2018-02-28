@@ -1,6 +1,6 @@
 ---
-title: "Computational Modeling - Week 4 - Assignment 2 - Part 1"
-author: "Riccardo Fusaroli"
+title: "Estimate you teacher's CogSci knowledge Part 1"
+author: "Dominik Klepl"
 date: "2/19/2017"
 output: html_document
 ---
@@ -143,7 +143,8 @@ flat_plot
 
 ## Answer
 Who's the best? 
-When the posterior distributions of all teacher's knowledge is plotted we can see that Josh's knowledge is the largest and with his narrow distribution this estimate is also the most reliable one. It's possible that Kristian is the best judging from his distribution but he would need to answer a bit more questions.
+When the posterior distributions of all teacher's knowledge is plotted we can see that Kristian's estimate of his knowledge is the best with highest posterior probability at 1. However since he answered so few questions the credibility of the estimate is rather doubtful.  
+Josh's knowledge is the largest after Kristian and with his narrow distribution this estimate is also the most credible one.
 
 Comment on the posteriors of Riccardo and Mikkel.
 To compare the posteriors better let's plot only these two together.
@@ -233,11 +234,10 @@ norm_plot
 flat_plot
 ```
 The normal prior does change the posteriors. 
-Riccardo's posterior's mode shifts with the normal prior from 0.5 to 0.7 so more to the mean of the prior. The confidence of the model in this estimate is also higher than with the flat prior. It remains however quite broad distribution.
-Josh's knowledge estimate is based on a lot of data and therefore the estimate was quite confident even with flat prior. With the normal prior the posterior doesn't change because the mean of the prior is at 0.8 which is similar value as the mean of Josh's posterior with flat prior. With the normal prior we basically confirm our prior and we should increase our belief that Josh is very knowledgable.
-Kristian's posterior changed from exponential growth to a more Gaussian distribution. His estimated knowledge is now lower and closer to the mean of prior. He might be still the most knowledgable of the teachers since he got the perfect score.
-Mikkel's posterior shifted also from chance level towards the mean of prior. However since the estimate was supported with quite a lot of data the prior does not influence the inference that much and therefore the posterior remains quite narrow.
-
+  Riccardo's posterior's mode shifts with the normal prior from 0.5 to 0.7 so more to the mean of the prior. The confidence of the model in this estimate is also higher than with the flat prior. It remains however quite broad distribution.
+  Josh's knowledge estimate is based on a lot of data and therefore the estimate was quite confident with flat prior. With the normal prior the posterior doesn't change because the mean of the prior is at 0.8 which is similar value as the mean of Josh's posterior with flat prior. With the normal prior we basically confirm our prior and we should increase our belief that Josh is very knowledgable.
+  Kristian's posterior changed from exponential growth to a more Gaussian distribution. His estimated knowledge is now lower and closer to the mean of prior. He might be still the most knowledgable of the teachers since he got the perfect score.
+  Mikkel's posterior shifted also from chance level towards the mean of prior. However since the estimate was supported with quite a lot of data the prior does not influence the inference that much and therefore the posterior remains quite narrow.
 
 
 4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
@@ -275,21 +275,76 @@ plot_more_norm = ggplot(result_more_norm,aes(grid,posterior,color=Teacher))+
 plot_more_flat
 plot_more_norm
 ```
-
+With this increase of amount of data the prior is affecting the inference only weakly. The posteriors of all teachers are narrower now but the means remained the same. In Kristian's case the posterior skyrocketed since he answered all 200 questions correctly, it seems he really is the best one of the teachers as was suggested with posterior updated with only 2 datapoints.
 
 5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
 
-Prior could be step function (1s until 0.5 and 0s from that). Or a normal distribution with mean at chance level and very small standard deviation.
+A normal distribution with mean at chance level and very small standard deviation.
+prior ~ Normal(0.5,0.01)
+
+```{r define prior}
+plot(dnorm(seq(from=0, to=1, length.out = 200),mean=0.5, sd=0.1)) #not skeptical enough
+
+plot(dnorm(seq(from=0, to=1, length.out = 1e4),mean=0.5, sd=0.02)) #well, OK
+```
+
+
+```{r function}
+get_posterior_skeptic = function(dat,teacher,grid_size) {
+  dens=grid_size
+  
+  p_grid = seq(from=0, to=1, length.out = dens)
+  
+  prior=dnorm(p_grid,mean=0.5, sd=0.02)
+  
+  likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
+  
+  unst_post = likelihood * prior
+  
+  posterior = unst_post/sum(unst_post)
+  
+  result=data.frame(grid=p_grid,posterior=posterior,prior=prior,likelihood=likelihood, Teacher=teacher)
+  
+  return(result)
+}
+```
+
+```{r fit the model}
+result_skept = data.frame()
+teachers=c("KT", "JS","MW","RF")
+
+for (teach in teachers) {
+  res_1_skept = get_posterior_skeptic(d,teach,gr_size)
+  
+  result_skept = rbind(res_1_skept,result_skept)
+}
+
+ggplot(result_skept,aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+#can't see riccardo and kristian
+KRRic=subset(result_skept,Teacher=="RF" | Teacher=="KT")
+ggplot(subset(result_skept,Teacher=="RF"| Teacher=="KT"),aes(grid,posterior,color=Teacher))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior/gr_size),color='black')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") #they're hiding behind the prior 
+```
+
 
 6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
+
 
 7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
 ```{r}
 FlatModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("uniform(0,1)", class = "Intercept"),family=binomial)
 plot(FlatModel)
-PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"))
+PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"),family=binomial)
 plot(PositiveModel)
-SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"))
+SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"),family=binomial)
 plot(SkepticalModel)
 ```
 

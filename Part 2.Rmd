@@ -1,17 +1,19 @@
 ---
-title: "Computational Modeling - Week 5 - Assignment 2 - Part 2"
-author: "Riccardo Fusaroli"
+title: "Estimate you teacher's CogSci knowledge Part 2"
+author: "Dominik Klepl"
 date: "2/19/2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci.
 
 ### Second part: Focusing on predictions
+
+```{r libraries}
+library(ggplot2)
+library(rethinking)
+```
+
 
 Last year you assessed the teachers (darned time runs quick!). Now you want to re-test them and assess whether your models are producing reliable predictions. In Methods 3 we learned how to do machine-learning style assessment of predictions (e.g. rmse on testing datasets). Bayesian stats makes things a bit more complicated. So we'll try out how that works. N.B. You can choose which prior to use for the analysis of last year's data.
 
@@ -25,11 +27,60 @@ This is the old data:
 - Josh: 160 correct answers out of 198 questions (Josh never gets bored)
 - Mikkel: 66 correct answers out of 132 questions
 
+```{r}
+d_old <- data.frame(
+  Correct=c(3,2,160,66),
+  Questions=c(6,2,198,132),
+  Teacher=c("RF","KT","JS","MW"))
+```
+
+#Import model
+First I just replicate the models from part 1 so that this markdown is self-runnable.
+
+```{r}
+get_posterior_norm = function(dat,teacher,grid_size) {
+  dens=grid_size
+  
+  p_grid = seq(from=0, to=1, length.out = dens)
+  
+  prior=dnorm(p_grid,mean=0.8, sd=0.2)
+  
+  likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
+  
+  unst_post = likelihood * prior
+  
+  posterior = unst_post/sum(unst_post)
+  
+  result=data.frame(grid=p_grid,posterior=posterior,prior=prior,likelihood=likelihood, Teacher=teacher)
+  
+  return(result)
+}
+
+gr_size=1e4
+
+RF_old=get_posterior_norm(d_old,"RF",gr_size)
+KT_old=get_posterior_norm(d_old,"KT",gr_size)
+JS_old=get_posterior_norm(d_old,"JS",gr_size)
+MW_old=get_posterior_norm(d_old,"MW",gr_size)
+
+#get just prior from the results
+prior_RF = RF_old$posterior
+prior_KT = KT_old$posterior
+prior_JS = JS_old$posterior
+prior_MW = MW_old$posterior
+```
 This is the new data:
 - Riccardo: 9 correct answers out of 10 questions (then he freaks out about teaching preparation and leaves)
 - Kristian: 8 correct answers out of 12 questions
 - Josh: 148 correct answers out of 172 questions (again, Josh never gets bored)
 - Mikkel: 34 correct answers out of 65 questions
+
+```{r}
+d_new <- data.frame(
+  Correct=c(9,8,148,34),
+  Questions=c(10,12,172,65),
+  Teacher=c("RF","KT","JS","MW"))
+```
 
 Guidance Tips
 
@@ -37,6 +88,87 @@ Guidance Tips
 2. Last year's results are this year's expectations.
 3. Are the parameter estimates changing? (way 1)
 4. How does the new data look in last year's predictive posterior? (way 2)
+
+
+
+#1.1 Way 1
+Make a new function to update the prior with data
+```{r}
+get_posterior_new = function(dat,teacher,new_pr) {
+  dens=1e4
+  
+  p_grid = seq(from=0, to=1, length.out = dens)
+  
+  prior=new_pr
+  
+  likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
+  
+  unst_post = likelihood * prior
+  
+  posterior = unst_post/sum(unst_post)
+  
+  result=data.frame(grid=p_grid,posterior=posterior,prior=prior,likelihood=likelihood, Teacher=teacher)
+  
+  return(result)
+}
+```
+
+```{r}
+result_RF = get_posterior_new(d_new, "RF", prior_RF )
+result_KT = get_posterior_new(d_new, "KT", prior_KT )
+result_JS = get_posterior_new(d_new, "JS", prior_JS )
+result_MW = get_posterior_new(d_new, "MW", prior_MW )
+```
+
+And plot the results.
+```{r}
+ggplot(result_RF,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+ggplot(result_KT,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+ggplot(result_JS,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+
+ggplot(result_MW,aes(grid,posterior))+
+  geom_line()+
+  theme_classic()+
+  geom_line(aes(grid,prior),color='red')+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+```
+
+
+#1.2 Way 2
+```{r sample from old posteriors}
+samples_RF = sample(RF_old$grid, prob=RF_old$posterior, size=1e4, replace=T)
+samples_KT = sample(KT_old$grid, prob=KT_old$posterior, size=1e4, replace=T)
+samples_JS = sample(JS_old$grid, prob=JS_old$posterior, size=1e4, replace=T)
+samples_MW = sample(MW_old$grid, prob=MW_old$posterior, size=1e4, replace=T)
+```
+
+```{r predictive posterior}
+pred_RF =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="RF"] , prob=samples_RF)
+simplehist(pred_RF)
+
+pred_KT =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="KT"] , prob=samples_KT)
+simplehist(pred_KT)
+
+pred_JS =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="JS"] , prob=samples_JS)
+simplehist(pred_JS)
+
+pred_MW =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="MW"] , prob=samples_MW)
+simplehist(pred_MW)
+```
 
 
 ### Depending on time: Questions from the handbook
@@ -51,3 +183,59 @@ Now suppose you are managing a captive panda breeding program. You have a new fe
 - The probability it correctly identifies a species A panda is 0.8.
 - The probability it correctly identifies a species B panda is 0.65.
 The vet administers the test to your panda and tells you that the test is positive for species A. First ignore your previous information from the births and compute the posterior probability that your panda is species A. Then redo your calculation, now using the birth data as well.
+
+###HARD 4.1
+```{r}
+#first just the test
+prior = c(0.5,0.5)
+
+likelihood = c(.8,1-.65)
+
+unstandardized.posterior = prior * likelihood
+posterior = unstandardized.posterior / sum(unstandardized.posterior)
+
+posterior[1]
+```
+###HARD 4.2
+```{r}
+#posterior from 4.1 becomes prior now
+prior = posterior
+
+#and add the likelihood from H3 - probability of both species having twins and then single
+species_A = 0.1 * (1-0.1)
+species_B = 0.2 * (1-0.2)
+
+likelihood = c(species_A,species_B)
+
+unstandardized.posterior = prior * likelihood
+posterior = unstandardized.posterior / sum(unstandardized.posterior)
+
+posterior[1]
+```
+
+```{r}
+evidence = factor(rep(c("prior", 
+                        "prior + twins", 
+                        "prior + twins + single", 
+                        "prior + twins + single + test = A"), 
+               each = 2), 
+               levels = c("prior", 
+                        "prior + twins", 
+                        "prior + twins + single", 
+                        "prior + twins + single + test = A"))
+species = rep(c("Species A", "Species B"), 4)
+prob = c(0.5, 0.5, 0.33, 0.67, 0.36, 0.64, 0.57, 0.43)
+change_df <- data.frame(species = species,
+                        evidence = evidence,
+                        prob = prob)
+ggplot(change_df, aes(x = evidence, 
+                      y = prob, 
+                      colour = species, 
+                      group = species)) +
+  geom_line() +
+  geom_point(size = 3) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  xlab("Pieces of information") +
+  ylab("Posterior Probability")
+```
