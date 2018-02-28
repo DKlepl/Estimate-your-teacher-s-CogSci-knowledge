@@ -132,7 +132,7 @@ flat_plot=ggplot(result_all,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/1e4),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge")+
-  theme_wsj(base_size = 6.5)+
+  theme_wsj(base_size = 5.5)+
   theme(legend.text=element_text(size=10))
 
 flat_plot
@@ -160,7 +160,7 @@ flat_M_R=ggplot(result_M_R,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/1e4),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Uniform(1,1e4)")+
-  theme_wsj(base_size = 6.5)+
+  theme_wsj(base_size = 5.5)+
   theme(legend.text=element_text(size=10))
 
 flat_M_R
@@ -223,7 +223,7 @@ norm_plot=ggplot(norm_all,aes(grid,posterior,color=Teacher))+
   geom_line(aes(grid,prior/gr_size),color='black')+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.8,0.2)")+
-  theme_wsj(base_size = 6.5)+
+  theme_wsj(base_size = 5.5)+
   theme(legend.text=element_text(size=10))
 
 ggsave("Figures/plot_norm_all.jpg",norm_plot)
