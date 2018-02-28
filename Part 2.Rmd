@@ -122,52 +122,81 @@ result_MW = get_posterior_new(d_new, "MW", prior_MW )
 
 And plot the results.
 ```{r}
-ggplot(result_RF,aes(grid,posterior))+
+old_new_RF=ggplot(result_RF,aes(grid,posterior))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  labs(title="Riccardo's CogSci knowledge last year and now",
+       subtitle="Now in black")+
+  theme_wsj(base_size = 6.5)
 
-ggplot(result_KT,aes(grid,posterior))+
+old_new_KT=ggplot(result_KT,aes(grid,posterior))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  labs(title="Kristian's CogSci knowledge last year and now",
+       subtitle="Now in black")+
+  theme_wsj(base_size = 6.5) 
 
-ggplot(result_JS,aes(grid,posterior))+
+old_new_JS=ggplot(result_JS,aes(grid,posterior))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  labs(title="Josh's CogSci knowledge last year and now",
+       subtitle="Now in black")+
+  theme_wsj(base_size = 6.5) 
 
-ggplot(result_MW,aes(grid,posterior))+
+old_new_MW=ggplot(result_MW,aes(grid,posterior))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  labs(title="Mikkel's CogSci knowledge last year and now",
+       subtitle="Now in black")+
+  theme_wsj(base_size = 6.5) 
+
+ggsave("Figures/old_new_RF.jpg",old_new_RF)
+ggsave("Figures/old_new_KT.jpg",old_new_KT)
+ggsave("Figures/old_new_JS.jpg",old_new_JS)
+ggsave("Figures/old_new_MW.jpg",old_new_MW)
 ```
 
 
 #1.2 Way 2
-```{r sample from old posteriors}
-samples_RF = sample(RF_old$grid, prob=RF_old$posterior, size=1e4, replace=T)
-samples_KT = sample(KT_old$grid, prob=KT_old$posterior, size=1e4, replace=T)
-samples_JS = sample(JS_old$grid, prob=JS_old$posterior, size=1e4, replace=T)
-samples_MW = sample(MW_old$grid, prob=MW_old$posterior, size=1e4, replace=T)
+```{r predict and plot}
+predict_performance = function (data.old, data.new, teacher) {
+  pacman::p_load(ggthemes,ggplot2)
+  samples = sample( data.old$grid, prob=data.old$posterior , size=1e4 , replace=TRUE )
+  pred = rbinom( 1e4 , size=data.new$Questions[data.new$Teacher==teacher] , prob=samples)
+  predictions=data.frame(prediction=as.factor(pred),    correct=as.numeric(data.new$Correct[data.new$Teacher==teacher])
+                         )
+  
+  predictions$correct=predictions$prediction==data.new$Correct[data.new$Teacher==teacher]
+  
+  plot=ggplot(data=predictions, aes(x=prediction,fill=correct)) +
+    stat_count(width = 0.3) +
+    labs(title="Predictive posterior of number of correct answers", subtitle= "Real value in blue", x= "Correct answers", y= "Pr") +
+    theme_wsj(base_size = 6.5)+
+    theme(legend.position = "none")
+  print(plot)
+  
+  return(plot)
+}
 ```
 
-```{r predictive posterior}
-pred_RF =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="RF"] , prob=samples_RF)
-simplehist(pred_RF)
+```{r}
+predict_RF=predict_performance(RF_old,d_new,"RF")
+predict_KT=predict_performance(KT_old,d_new,"KT")
+predict_JS=predict_performance(JS_old,d_new,"JS")
+predict_MW=predict_performance(MW_old,d_new,"MW")
 
-pred_KT =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="KT"] , prob=samples_KT)
-simplehist(pred_KT)
-
-pred_JS =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="JS"] , prob=samples_JS)
-simplehist(pred_JS)
-
-pred_MW =  rbinom( 1e4 , size=d_new$Questions[d_new$Teacher=="MW"] , prob=samples_MW)
-simplehist(pred_MW)
+ggsave("Figures/predict_RF.jpg",predict_RF)
+ggsave("Figures/predict_KT.jpg",predict_KT)
+ggsave("Figures/predict_JS.jpg",predict_JS)
+ggsave("Figures/predict_MW.jpg",predict_MW)
 ```
 
 

@@ -42,8 +42,8 @@ Questions:
 - First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
 
 ```{r grid approximation}
-get_posterior_flat = function(dat,teacher,grid_size) {
-  dens=grid_size
+get_posterior_flat = function(dat,teacher) {
+  dens=1e4
   
   p_grid = seq(from=0, to=1, length.out = dens)
   
@@ -59,16 +59,23 @@ get_posterior_flat = function(dat,teacher,grid_size) {
   
   return(result)
 }
-gr_size=1e4
 
-result_Ric = get_posterior_flat(d,"RF",gr_size)
-
-
-ggplot(result_Ric,aes(grid,posterior))+
+plot_post_prior=function(data) {
+  plot=ggplot(data,aes(grid,posterior))+
   geom_line()+
   theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  geom_line(aes(grid,prior/1e4),color='red')+
+  theme_wsj(base_size = 6.5)+
+    labs(title="Posterior distribution of cogsci knowledge")
+  
+  return(plot)
+}
+```
+
+```{r}
+result_Ric = get_posterior_flat(d,"RF")
+
+plot_flat_RF=plot_post_prior(result_Ric)
 
 #What is the probability he knows more than chance (0.5)
 sum( result_Ric$posterior[ result_Ric$grid > 0.5 ] )
@@ -102,31 +109,19 @@ Using the grid approximation Riccardo's CogSci knowledge is estimated with the h
 gr_size=1e4
 
 #Josh
-result_Josh = get_posterior_flat(d,"JS",gr_size)
+result_Josh = get_posterior_flat(d,"JS")
 
-ggplot(result_Josh,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+plot_flat_JS=plot_post_prior(result_Josh)
 
 #Kristian
-result_Krist = get_posterior_flat(d,"KT",gr_size)
+result_Krist = get_posterior_flat(d,"KT")
 
-ggplot(result_Krist,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+plot_flat_KT=plot_post_prior(result_Krist)
 
 #Mikkel
-result_Mik = get_posterior_flat(d,"MW",gr_size)
+result_Mik = get_posterior_flat(d,"MW")
 
-ggplot(result_Mik,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+plot_flat_MW=plot_post_prior(result_Mik) 
 
 #plot all teachers together
   #get all results together
@@ -135,11 +130,21 @@ result_all = rbind(result_Ric,result_Josh,result_Krist,result_Mik)
 flat_plot=ggplot(result_all,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  geom_line(aes(grid,prior/1e4),color='black')+
+  labs(title="Posterior distributions of CogSci teachers' knowledge")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
 
 flat_plot
 ```
+```{r save all the plots}
+ggsave("Figures/plot_flat_RF.jpg",plot_flat_RF)
+ggsave("Figures/plot_flat_KT.jpg",plot_flat_KT)
+ggsave("Figures/plot_flat_JS.jpg",plot_flat_JS)
+ggsave("Figures/plot_flat_MW.jpg",plot_flat_MW)
+ggsave("Figures/plot_flat_all.jpg",flat_plot)
+```
+
 
 ## Answer
 Who's the best? 
@@ -150,11 +155,17 @@ Comment on the posteriors of Riccardo and Mikkel.
 To compare the posteriors better let's plot only these two together.
 ```{r}
 result_M_R = rbind(result_Ric,result_Mik)
-ggplot(result_M_R,aes(grid,posterior,color=Teacher))+
+flat_M_R=ggplot(result_M_R,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  geom_line(aes(grid,prior/1e4),color='black')+
+  labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Uniform(1,1e4)")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
+
+flat_M_R
+
+ggsave("Figures/flat_M+R.jpg",flat_M_R)
 ```
 The modes of both distributions are at 0.5. However, since Mikkel answered considerably more questions than Riccardo, his distribution is narrower around the mode which makes that estimate more credible.
 
@@ -186,39 +197,21 @@ gr_size=1e4
 
 #Riccardo
 norm_Ric=get_posterior_norm(d,"RF",gr_size)
-
-pl_1=ggplot(norm_Ric,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+plot_norm_RF=plot_post_prior(norm_Ric)
 
 #Josh
 norm_Josh = get_posterior_norm(d,"JS",gr_size)
+plot_norm_JS=plot_post_prior(norm_Josh)
 
-ggplot(norm_Josh,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
 
 #Kristian
 norm_Krist = get_posterior_norm(d,"KT",gr_size)
+plot_norm_KT=plot_post_prior(norm_Krist)
 
-ggplot(norm_Krist,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
 
 #Mikkel
 norm_Mik = get_posterior_norm(d,"MW",gr_size)
-
-ggplot(norm_Mik,aes(grid,posterior))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='red')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+plot_norm_MW=plot_post_prior(norm_Mik)
 
 
 #plot all together
@@ -228,10 +221,12 @@ norm_plot=ggplot(norm_all,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.8,0.2)")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
 
-norm_plot
-flat_plot
+ggsave("Figures/plot_norm_all.jpg",norm_plot)
 ```
 The normal prior does change the posteriors. 
   Riccardo's posterior's mode shifts with the normal prior from 0.5 to 0.7 so more to the mean of the prior. The confidence of the model in this estimate is also higher than with the flat prior. It remains however quite broad distribution.
@@ -253,7 +248,7 @@ result_more_flat = data.frame()
 result_more_norm = data.frame()
 
 for (teach in teachers) {
-  res_1_flat = get_posterior_flat(d_more,teach,gr_size)
+  res_1_flat = get_posterior_flat(d_more,teach)
   res_1_norm = get_posterior_norm(d_more,teach,gr_size)
   
   result_more_flat = rbind(res_1_flat,result_more_flat)
@@ -264,16 +259,20 @@ plot_more_flat = ggplot(result_more_flat,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Uniform(1,1e4)")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
 
 plot_more_norm = ggplot(result_more_norm,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.8,0.2)")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
 
-plot_more_flat
-plot_more_norm
+ggsave("Figures/plot_more_flat.jpg",plot_more_flat)
+ggsave("Figures/plot_more_norm.jpg",plot_more_norm)
 ```
 With this increase of amount of data the prior is affecting the inference only weakly. The posteriors of all teachers are narrower now but the means remained the same. In Kristian's case the posterior skyrocketed since he answered all 200 questions correctly, it seems he really is the best one of the teachers as was suggested with posterior updated with only 2 datapoints.
 
@@ -295,7 +294,7 @@ get_posterior_skeptic = function(dat,teacher,grid_size) {
   
   p_grid = seq(from=0, to=1, length.out = dens)
   
-  prior=dnorm(p_grid,mean=0.5, sd=0.02)
+  prior=dnorm(p_grid,mean=0.5, sd=0.01)
   
   likelihood = dbinom(dat$Correct[dat$Teacher==teacher], size=dat$Questions[dat$Teacher==teacher], prob=p_grid)
   
@@ -319,19 +318,15 @@ for (teach in teachers) {
   result_skept = rbind(res_1_skept,result_skept)
 }
 
-ggplot(result_skept,aes(grid,posterior,color=Teacher))+
+plot_skeptic=ggplot(result_skept,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") 
+  geom_line(aes(grid,prior/1e4),color='black')+
+  labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.5,0.01)")+
+  theme_wsj(base_size = 6.5)+
+  theme(legend.text=element_text(size=10))
 
-#can't see riccardo and kristian
-KRRic=subset(result_skept,Teacher=="RF" | Teacher=="KT")
-ggplot(subset(result_skept,Teacher=="RF"| Teacher=="KT"),aes(grid,posterior,color=Teacher))+
-  geom_line()+
-  theme_classic()+
-  geom_line(aes(grid,prior/gr_size),color='black')+
-  xlab("CogSci Knowledge")+ ylab("Posterior probability") #they're hiding behind the prior 
+ggsave("Figures/plot_skeptic.jpg",plot_skeptic)
 ```
 
 
