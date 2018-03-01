@@ -129,7 +129,8 @@ old_new_RF=ggplot(result_RF,aes(grid,posterior))+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Riccardo's CogSci knowledge last year and now",
        subtitle="Now in black")+
-  theme_wsj(base_size = 6.5)
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 old_new_KT=ggplot(result_KT,aes(grid,posterior))+
   geom_line()+
@@ -138,7 +139,8 @@ old_new_KT=ggplot(result_KT,aes(grid,posterior))+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Kristian's CogSci knowledge last year and now",
        subtitle="Now in black")+
-  theme_wsj(base_size = 6.5) 
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 old_new_JS=ggplot(result_JS,aes(grid,posterior))+
   geom_line()+
@@ -147,7 +149,8 @@ old_new_JS=ggplot(result_JS,aes(grid,posterior))+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Josh's CogSci knowledge last year and now",
        subtitle="Now in black")+
-  theme_wsj(base_size = 6.5) 
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 old_new_MW=ggplot(result_MW,aes(grid,posterior))+
   geom_line()+
@@ -156,7 +159,8 @@ old_new_MW=ggplot(result_MW,aes(grid,posterior))+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Mikkel's CogSci knowledge last year and now",
        subtitle="Now in black")+
-  theme_wsj(base_size = 6.5) 
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 ggsave("Figures/old_new_RF.jpg",old_new_RF)
 ggsave("Figures/old_new_KT.jpg",old_new_KT)
@@ -179,8 +183,8 @@ predict_performance = function (data.old, data.new, teacher) {
   plot=ggplot(data=predictions, aes(x=prediction,fill=correct)) +
     stat_count(width = 0.3) +
     labs(title="Predictive posterior of number of correct answers", subtitle= "Real value in blue", x= "Correct answers", y= "Pr") +
-    theme_wsj(base_size = 6.5)+
-    theme(legend.position = "none")
+    theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+    theme(legend.position = "none",plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
   print(plot)
   
   return(plot)

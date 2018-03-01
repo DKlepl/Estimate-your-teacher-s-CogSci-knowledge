@@ -9,6 +9,7 @@ output: html_document
 library(brms)
 library(ggplot2)
 library(rethinking)
+library(ggthemes)
 ```
 
 ## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
@@ -63,10 +64,11 @@ get_posterior_flat = function(dat,teacher) {
 plot_post_prior=function(data) {
   plot=ggplot(data,aes(grid,posterior))+
   geom_line()+
-  theme_classic()+
   geom_line(aes(grid,prior/1e4),color='red')+
-  theme_wsj(base_size = 6.5)+
-    labs(title="Posterior distribution of cogsci knowledge")
+  labs(title="Posterior distribution of cogsci knowledge")+
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
   
   return(plot)
 }
@@ -132,8 +134,9 @@ flat_plot=ggplot(result_all,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/1e4),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge")+
-  theme_wsj(base_size = 5.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 flat_plot
 ```
@@ -160,8 +163,9 @@ flat_M_R=ggplot(result_M_R,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/1e4),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Uniform(1,1e4)")+
-  theme_wsj(base_size = 5.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 flat_M_R
 
@@ -223,8 +227,9 @@ norm_plot=ggplot(norm_all,aes(grid,posterior,color=Teacher))+
   geom_line(aes(grid,prior/gr_size),color='black')+
   xlab("CogSci Knowledge")+ ylab("Posterior probability")+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.8,0.2)")+
-  theme_wsj(base_size = 5.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 ggsave("Figures/plot_norm_all.jpg",norm_plot)
 ```
@@ -260,16 +265,18 @@ plot_more_flat = ggplot(result_more_flat,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/gr_size),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Uniform(1,1e4)")+
-  theme_wsj(base_size = 6.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 plot_more_norm = ggplot(result_more_norm,aes(grid,posterior,color=Teacher))+
   geom_line()+
   theme_classic()+
   geom_line(aes(grid,prior/gr_size),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.8,0.2)")+
-  theme_wsj(base_size = 6.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 ggsave("Figures/plot_more_flat.jpg",plot_more_flat)
 ggsave("Figures/plot_more_norm.jpg",plot_more_norm)
@@ -284,7 +291,7 @@ prior ~ Normal(0.5,0.01)
 ```{r define prior}
 plot(dnorm(seq(from=0, to=1, length.out = 200),mean=0.5, sd=0.1)) #not skeptical enough
 
-plot(dnorm(seq(from=0, to=1, length.out = 1e4),mean=0.5, sd=0.02)) #well, OK
+plot(dnorm(seq(from=0, to=1, length.out = 1e4),mean=0.5, sd=0.01)) #well, OK
 ```
 
 
@@ -323,8 +330,9 @@ plot_skeptic=ggplot(result_skept,aes(grid,posterior,color=Teacher))+
   theme_classic()+
   geom_line(aes(grid,prior/1e4),color='black')+
   labs(title="Posterior distributions of CogSci teachers' knowledge",subtitle="Prior ~ Normal(0.5,0.01)")+
-  theme_wsj(base_size = 6.5)+
-  theme(legend.text=element_text(size=10))
+  xlab("CogSci Knowledge")+ ylab("Posterior probability")+
+  theme_economist_white(gray_bg = F, base_family = "Verdana",base_size = 8)+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle =  element_text(hjust = 0.5) )
 
 ggsave("Figures/plot_skeptic.jpg",plot_skeptic)
 ```
