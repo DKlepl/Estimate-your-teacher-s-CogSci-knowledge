@@ -12,6 +12,7 @@ output: html_document
 ```{r libraries}
 library(ggplot2)
 library(rethinking)
+library(ggthemes)
 ```
 
 
